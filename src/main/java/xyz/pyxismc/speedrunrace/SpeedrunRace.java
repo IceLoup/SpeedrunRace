@@ -19,21 +19,21 @@ public class SpeedrunRace extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Nettoyage au démarrage
+
         cleanOldWorlds();
 
         this.teamManager = new TeamManager();
         this.worldManager = new WorldManager(this);
 
-        // Enregistrement des commandes
+
         getCommand("race").setExecutor(new RaceCommand(this));
         getCommand("join").setExecutor(new JoinCommand(this));
 
-        // Enregistrement des listeners
+
         getServer().getPluginManager().registerEvents(new PortalListener(teamManager), this);
         getServer().getPluginManager().registerEvents(new GameListener(teamManager), this);
 
-        // Lancement du Scoreboard (chaque seconde)
+
         new RaceScoreboardTask(this).runTaskTimer(this, 0L, 20L);
 
         getLogger().info("§aSpeedrunRace opérationnel avec LuckPerms !");
