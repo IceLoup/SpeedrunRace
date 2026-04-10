@@ -1,5 +1,6 @@
 package xyz.pyxismc.speedrunrace.listeners;
 
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.EnderDragon;
@@ -13,6 +14,7 @@ import xyz.pyxismc.speedrunrace.models.Team;
 public class GameListener implements Listener {
 
     private final TeamManager teamManager;
+    private static final MiniMessage MM = MiniMessage.miniMessage();
 
     // Le constructeur est indispensable pour que la classe connaisse tes équipes
     public GameListener(TeamManager teamManager) {
@@ -33,10 +35,10 @@ public class GameListener implements Listener {
             long duration = System.currentTimeMillis() - t.getStartTime();
             String time = formatTime(duration);
 
-            Bukkit.broadcastMessage(" ");
-            Bukkit.broadcastMessage("§6§l🏆 VICTOIRE DE L'ÉQUIPE " + t.getId().toUpperCase() + " 🏆");
-            Bukkit.broadcastMessage("§eTemps final : §f" + time);
-            Bukkit.broadcastMessage(" ");
+            Bukkit.broadcast(MM.deserialize(" "));
+            Bukkit.broadcast(MM.deserialize("<gradient:yellow:gold><bold>Victory — " + t.getId().toUpperCase()));
+            Bukkit.broadcast(MM.deserialize("<gray>Final time: <white>" + time));
+            Bukkit.broadcast(MM.deserialize(" "));
         }
     }
 

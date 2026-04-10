@@ -1,5 +1,7 @@
 package xyz.pyxismc.speedrunrace.commands;
 
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import xyz.pyxismc.speedrunrace.SpeedrunRace;
 import xyz.pyxismc.speedrunrace.models.Team;
 import net.luckperms.api.LuckPerms;
@@ -14,6 +16,8 @@ import org.bukkit.entity.Player;
 
 public class JoinCommand implements CommandExecutor {
     private final SpeedrunRace plugin;
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+
     public JoinCommand(SpeedrunRace p) { this.plugin = p; }
 
     @Override
@@ -26,13 +30,13 @@ public class JoinCommand implements CommandExecutor {
         Group g = lp.getGroupManager().getGroup(name);
 
         if (g == null) {
-            p.sendMessage("§cCe groupe LuckPerms n'existe pas !");
+            p.sendMessage(MM.deserialize("<#4A6FA5>Ce groupe LuckPerms n'existe pas !"));
             return true;
         }
 
         Team t = plugin.getTeamManager().getOrCreateTeam(name);
         if (t.getPlayers().size() >= 3 && !t.getPlayers().contains(p.getUniqueId())) {
-            p.sendMessage("§cÉquipe pleine (3/3) !");
+            p.sendMessage(MM.deserialize("<#4A6FA5>Équipe pleine <gray>(3/3) !"));
             return true;
         }
 
@@ -44,7 +48,10 @@ public class JoinCommand implements CommandExecutor {
         }
 
         plugin.getTeamManager().addPlayerToTeam(name, p);
-        p.sendMessage("§aTu as rejoint l'équipe §e" + name);
+        p.sendMessage(MM.deserialize(
+                "<gradient:#4A6FA5:#E8DCC8>Tu as rejoint l'équipe <team> !",
+                Placeholder.unparsed("team", name)
+        ));
         return true;
     }
 }
