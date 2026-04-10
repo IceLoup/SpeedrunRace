@@ -1,0 +1,22 @@
+name: SpeedrunRace
+version: 1.0
+# Correction : Ajout du 'mc' pour correspondre à ton package Java
+main: xyz.pyxismc.speedrunrace.SpeedrunRace
+api-version: 1.20
+# Depend : Ton plugin a besoin de ces APIs pour fonctionner au démarrage
+depend: [LuckPerms, Chunky]
+
+commands:
+  race:
+    description: Commande principale pour l'administration de la course.
+    usage: /race <pregen|start>
+    permission: race.admin
+    permission-message: §cTu n'as pas la permission de gérer la course.
+  join:
+    description: Permet de rejoindre une équipe LuckPerms.
+    usage: /join <nom_equipe>
+
+permissions:
+  race.admin:
+    description: Autorise l'accès aux fonctions de gestion de la SpeedrunRace.
+    default: op
