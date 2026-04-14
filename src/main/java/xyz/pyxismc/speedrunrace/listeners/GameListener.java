@@ -44,11 +44,20 @@ public class GameListener implements Listener {
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
         Team t = teamManager.getByPlayer(e.getPlayer());
-        if (t != null) {
-            World overworld = Bukkit.getWorld(t.getWorldName(World.Environment.NORMAL));
-            if (overworld != null) {
-                e.setRespawnLocation(overworld.getSpawnLocation());
-            }
+        if (t == null) return;
+
+        org.bukkit.Location custom = e.getPlayer().getRespawnLocation();
+        if (custom != null) {
+            String customWorld = custom.getWorld().getName();
+            boolean isTeamWorld = customWorld.equals(t.getWorldName(World.Environment.NORMAL))
+                    || customWorld.equals(t.getWorldName(World.Environment.NETHER))
+                    || customWorld.equals(t.getWorldName(World.Environment.THE_END));
+            if (isTeamWorld) return;
+        }
+
+        World overworld = Bukkit.getWorld(t.getWorldName(World.Environment.NORMAL));
+        if (overworld != null) {
+            e.setRespawnLocation(overworld.getSpawnLocation());
         }
     }
 
