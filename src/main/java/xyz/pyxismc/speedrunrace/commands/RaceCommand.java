@@ -34,7 +34,7 @@ public class RaceCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("start")) {
-            Bukkit.broadcast(MM.deserialize("<gradient:#4A6FA5:#E8DCC8><bold>DÉMARRAGE DE LA COURSE !"));
+            Bukkit.broadcast(MM.deserialize("<gradient:#4A6FA5:#E8DCC8><bold>THE RACE HAS STARTED!"));
             for (Team team : plugin.getTeamManager().getTeams()) {
                 plugin.getWorldManager().prepareTeamWorlds(team, () -> {
                     World w = Bukkit.getWorld(team.getWorldName(World.Environment.NORMAL));

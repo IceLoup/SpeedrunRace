@@ -9,11 +9,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 
 public class RaceScoreboardTask extends BukkitRunnable {
     private final SpeedrunRace plugin;
     private static final MiniMessage MM = MiniMessage.miniMessage();
+
     public RaceScoreboardTask(SpeedrunRace p) { this.plugin = p; }
 
     @Override
@@ -22,28 +24,35 @@ public class RaceScoreboardTask extends BukkitRunnable {
             Team t = plugin.getTeamManager().getByPlayer(p);
             if (t == null) continue;
 
-            Component Title = MM.deserialize("<gradient:yellow:gold>Speedrun Race");
+            Component title = MM.deserialize("<gradient:#4A6FA5:#7AA3D4><bold>Speedrun Race");
 
-            Scoreboard b = Bukkit.getScoreboardManager().getNewScoreboard();
-            Objective obj = b.registerNewObjective("race", "dummy", "" + Title);
+            Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
+            Objective obj = board.registerNewObjective("race", "dummy", title);
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
 
-            net.kyori.adventure.text.Component Wait = MM.deserialize("<white><italic>Waiting...");
-
-            String timeStr = "" + Wait;
+            String timeStr;
             if (t.getStartTime() > 0) {
                 long s = (System.currentTimeMillis() - t.getStartTime()) / 1000;
-                timeStr = String.format("§a%02d:%02d:%02d", s/3600, (s%3600)/60, s%60);
+                timeStr = String.format("<color:#4A6FA5>%02d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60);
+            } else {
+                timeStr = "<color:#E8DCC8><italic>Waiting...";
             }
 
-            obj.getScore("§1").setScore(6);
-            obj.getScore("§fTeam: §b" + t.getId().toUpperCase()).setScore(5);
-            obj.getScore("§fMembers: §e" + t.getPlayers().size() + "/3").setScore(4);
-            obj.getScore("§2").setScore(3);
-            obj.getScore("§fTime: " + timeStr).setScore(2);
-            obj.getScore("§3").setScore(1);
-            obj.getScore("pyxismc.xyz").setScore(0);
-            p.setScoreboard(b);
+            setLine(obj, "l6", 6, Component.empty());
+            setLine(obj, "l5", 5, MM.deserialize("<color:#E8DCC8>Team: <color:#4A6FA5>" + t.getId().toUpperCase()));
+            setLine(obj, "l4", 4, MM.deserialize("<color:#E8DCC8>Members: <color:#7AA3D4>" + t.getPlayers().size() + "/3"));
+            setLine(obj, "l3", 3, Component.empty());
+            setLine(obj, "l2", 2, MM.deserialize("<color:#E8DCC8>Time: " + timeStr));
+            setLine(obj, "l1", 1, Component.empty());
+            setLine(obj, "l0", 0, MM.deserialize("<color:#4A6FA5>pyxismc.xyz"));
+
+            p.setScoreboard(board);
         }
+    }
+
+    private void setLine(Objective obj, String key, int score, Component display) {
+        Score s = obj.getScore(key);
+        s.customName(display);
+        s.setScore(score);
     }
 }
