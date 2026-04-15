@@ -65,7 +65,7 @@ public class PortalListener implements Listener {
 
             World endWorld = Bukkit.getWorld(team.getWorldName(World.Environment.THE_END));
             if (endWorld != null) {
-                e.setTo(endWorld.getSpawnLocation());
+                e.setTo(new Location(endWorld, 100.5, 49, 0.5));
             }
         } else if (fromWorld.getEnvironment() == World.Environment.THE_END) {
 
