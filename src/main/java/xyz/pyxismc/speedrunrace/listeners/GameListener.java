@@ -2,8 +2,11 @@ package xyz.pyxismc.speedrunrace.listeners;
 
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.EnderDragon;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -11,11 +14,12 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import xyz.pyxismc.speedrunrace.core.TeamManager;
 import xyz.pyxismc.speedrunrace.models.Team;
 
+import java.util.UUID;
+
 public class GameListener implements Listener {
 
     private final TeamManager teamManager;
     private static final MiniMessage MM = MiniMessage.miniMessage();
-
 
     public GameListener(TeamManager teamManager) {
         this.teamManager = teamManager;
@@ -35,9 +39,17 @@ public class GameListener implements Listener {
             String time = formatTime(duration);
 
             Bukkit.broadcast(MM.deserialize(" "));
-            Bukkit.broadcast(MM.deserialize("<gradient:yellow:gold><bold>Victory — " + t.getId().toUpperCase()));
-            Bukkit.broadcast(MM.deserialize("<gray>Final time: <white>" + time));
+            Bukkit.broadcast(MM.deserialize("<gradient:#4A6FA5:#E8DCC8><bold>  " + t.getId().toUpperCase() + " has completed the speedrun!  </bold>"));
+            Bukkit.broadcast(MM.deserialize("<#E8DCC8>Final time: <white><bold>" + time + "</bold>"));
             Bukkit.broadcast(MM.deserialize(" "));
+
+            for (UUID uuid : t.getPlayers()) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null && p.isOnline()) {
+                    p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
+                    p.setGameMode(GameMode.SPECTATOR);
+                }
+            }
         }
     }
 
@@ -45,6 +57,8 @@ public class GameListener implements Listener {
     public void onRespawn(PlayerRespawnEvent e) {
         Team t = teamManager.getByPlayer(e.getPlayer());
         if (t == null) return;
+
+        if (e.getPlayer().getGameMode() == GameMode.SPECTATOR) return;
 
         org.bukkit.Location custom = e.getPlayer().getRespawnLocation();
         if (custom != null) {
