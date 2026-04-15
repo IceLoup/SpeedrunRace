@@ -30,13 +30,13 @@ public class JoinCommand implements CommandExecutor {
         Group g = lp.getGroupManager().getGroup(name);
 
         if (g == null) {
-            p.sendMessage(MM.deserialize("<#4A6FA5>Ce groupe LuckPerms n'existe pas !"));
+            p.sendMessage(MM.deserialize("<#4A6FA5>This LuckPerms group does not exist!"));
             return true;
         }
 
         Team t = plugin.getTeamManager().getOrCreateTeam(name);
         if (t.getPlayers().size() >= 3 && !t.getPlayers().contains(p.getUniqueId())) {
-            p.sendMessage(MM.deserialize("<#4A6FA5>Équipe pleine <gray>(3/3) !"));
+            p.sendMessage(MM.deserialize("<#4A6FA5>This team is full <gray>(3/3)!"));
             return true;
         }
 
@@ -49,7 +49,7 @@ public class JoinCommand implements CommandExecutor {
 
         plugin.getTeamManager().addPlayerToTeam(name, p);
         p.sendMessage(MM.deserialize(
-                "<gradient:#4A6FA5:#E8DCC8>Tu as rejoint l'équipe <team> !",
+                "<gradient:#4A6FA5:#E8DCC8>You have joined team <team>!",
                 Placeholder.unparsed("team", name)
         ));
         return true;
