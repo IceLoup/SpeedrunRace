@@ -9,6 +9,7 @@ public class Team {
     private final String id;
     private final List<UUID> players = new ArrayList<>();
     private long startTime = 0;
+    private long finishDurationMillis = 0;
     private boolean finished = false;
 
     public Team(String id) { this.id = id; }
@@ -16,8 +17,16 @@ public class Team {
     public List<UUID> getPlayers() { return players; }
     public long getStartTime() { return startTime; }
     public void setStartTime(long startTime) { this.startTime = startTime; }
+    public long getFinishDurationMillis() { return finishDurationMillis; }
+    public void setFinishDurationMillis(long finishDurationMillis) { this.finishDurationMillis = finishDurationMillis; }
     public boolean isFinished() { return finished; }
     public void setFinished(boolean finished) { this.finished = finished; }
+
+    public void resetRaceProgress() {
+        this.startTime = 0;
+        this.finishDurationMillis = 0;
+        this.finished = false;
+    }
 
     public String getWorldName(World.Environment env) {
         switch (env) {

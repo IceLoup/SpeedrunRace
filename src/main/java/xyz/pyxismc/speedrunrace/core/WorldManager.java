@@ -22,20 +22,36 @@ public class WorldManager {
         });
     }
 
+    public boolean areTeamWorldsReady(Team team) {
+        return Bukkit.getWorld(team.getWorldName(World.Environment.NORMAL)) != null
+                && Bukkit.getWorld(team.getWorldName(World.Environment.NETHER)) != null
+                && Bukkit.getWorld(team.getWorldName(World.Environment.THE_END)) != null;
+    }
+
     private void copyAndLoad(String source, String target, World.Environment env, Runnable done) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 File sourceDir = new File(Bukkit.getWorldContainer(), source);
                 File targetDir = new File(Bukkit.getWorldContainer(), target);
-                copyDirectory(sourceDir.toPath(), targetDir.toPath());
+                if (!sourceDir.exists()) {
+                    throw new IOException("Missing template world: " + source);
+                }
+                if (!targetDir.exists()) {
+                    copyDirectory(sourceDir.toPath(), targetDir.toPath());
+                }
                 new File(targetDir, "uid.dat").delete();
                 new File(targetDir, "session.lock").delete();
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    new WorldCreator(target).environment(env).createWorld();
+                    if (Bukkit.getWorld(target) == null) {
+                        new WorldCreator(target).environment(env).createWorld();
+                    }
                     if (done != null) done.run();
                 });
-            } catch (IOException e) { e.printStackTrace(); }
+            } catch (IOException e) {
+                plugin.getLogger().severe(e.getMessage());
+                e.printStackTrace();
+            }
         });
     }
 
@@ -44,7 +60,7 @@ public class WorldManager {
             @Override
             public FileVisitResult preVisitDirectory(Path d, BasicFileAttributes a) throws IOException {
                 Path targetDir = t.resolve(s.relativize(d));
-                if (!Files.exists(targetDir)) Files.createDirectory(targetDir);
+                if (!Files.exists(targetDir)) Files.createDirectories(targetDir);
                 return FileVisitResult.CONTINUE;
             }
             @Override

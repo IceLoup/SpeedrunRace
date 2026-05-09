@@ -13,6 +13,8 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import xyz.pyxismc.speedrunrace.core.RaceScoreboardTask;
+import xyz.pyxismc.speedrunrace.core.TeamManager;
 
 public class JoinCommand implements CommandExecutor {
     private final SpeedrunRace plugin;
@@ -25,18 +27,18 @@ public class JoinCommand implements CommandExecutor {
         if (!(s instanceof Player p)) return true;
         if (args.length == 0) return false;
 
-        String name = args[0].toLowerCase();
+        String name = plugin.getTeamManager().normalizeTeamId(args[0]);
         LuckPerms lp = LuckPermsProvider.get();
         Group g = lp.getGroupManager().getGroup(name);
 
         if (g == null) {
-            p.sendMessage(MM.deserialize("<#4A6FA5>This LuckPerms group does not exist!"));
+            p.sendMessage(MM.deserialize("<#c13cff>This LuckPerms group does not exist!"));
             return true;
         }
 
         Team t = plugin.getTeamManager().getOrCreateTeam(name);
-        if (t.getPlayers().size() >= 3 && !t.getPlayers().contains(p.getUniqueId())) {
-            p.sendMessage(MM.deserialize("<#4A6FA5>This team is full <gray>(3/3)!"));
+        if (!plugin.getTeamManager().canJoin(t, p)) {
+            p.sendMessage(MM.deserialize("<#c13cff>This team is full <gray>(" + TeamManager.MAX_TEAM_SIZE + "/" + TeamManager.MAX_TEAM_SIZE + ")!"));
             return true;
         }
 
@@ -47,11 +49,14 @@ public class JoinCommand implements CommandExecutor {
             lp.getUserManager().saveUser(u);
         }
 
-        plugin.getTeamManager().addPlayerToTeam(name, p);
+        Team joinedTeam = plugin.getTeamManager().addPlayerToTeam(name, p);
         p.sendMessage(MM.deserialize(
-                "<gradient:#4A6FA5:#E8DCC8>You have joined team <team>!",
-                Placeholder.unparsed("team", name)
+                "<gradient:#6b109e:#c13cff>You have joined team <team> <gray>(<size>/" + TeamManager.MAX_TEAM_SIZE + ")!",
+                Placeholder.unparsed("team", name),
+                Placeholder.unparsed("size", String.valueOf(joinedTeam.getPlayers().size()))
         ));
+        new RaceScoreboardTask(plugin).updatePlayer(p);
+        plugin.refreshPlayerVisibility();
         return true;
     }
 }

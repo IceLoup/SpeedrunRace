@@ -1,20 +1,26 @@
 name: SpeedrunRace
-version: 1.0.1
+version: 1.0.2
 main: xyz.pyxismc.speedrunrace.SpeedrunRace
 api-version: 1.21.11
 depend: [LuckPerms, Chunky]
+softdepend: [MiniPlaceholders]
 
 commands:
   race:
     description: Admin commands for managing the race.
-    usage: /race <pregen|start>
+    usage: /race <pregen|duplicate|start|forcestart>
     permission: race.admin
-    permission-message: §cYou don't have permission to use this command.
+    permission-message: You don't have permission to use this command.
+  forcestart:
+    description: Force-start the race without start validations.
+    usage: /forcestart
+    permission: race.admin
+    permission-message: You don't have permission to use this command.
   join:
     description: Allow the player to join a team.
-    usage: /join <nom_equipe>
+    usage: /join <team_name>
 
 permissions:
   race.admin:
-    description: administrator permissions for managing.
+    description: Administrator permissions for managing the race.
     default: op

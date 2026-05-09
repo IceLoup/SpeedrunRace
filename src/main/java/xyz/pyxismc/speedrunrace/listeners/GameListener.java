@@ -1,61 +1,35 @@
 package xyz.pyxismc.speedrunrace.listeners;
 
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
-import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerAdvancementDoneEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import xyz.pyxismc.speedrunrace.core.TeamManager;
+import xyz.pyxismc.speedrunrace.SpeedrunRace;
+import xyz.pyxismc.speedrunrace.core.RaceScoreboardTask;
 import xyz.pyxismc.speedrunrace.models.Team;
-
-import java.util.UUID;
 
 public class GameListener implements Listener {
 
-    private final TeamManager teamManager;
-    private static final MiniMessage MM = MiniMessage.miniMessage();
+    private final SpeedrunRace plugin;
 
-    public GameListener(TeamManager teamManager) {
-        this.teamManager = teamManager;
-    }
-
-    @EventHandler
-    public void onWin(EntityDeathEvent e) {
-        if (!(e.getEntity() instanceof EnderDragon)) return;
-
-        World world = e.getEntity().getWorld();
-        Team t = teamManager.getByWorldName(world.getName());
-
-        if (t != null && !t.isFinished()) {
-            t.setFinished(true);
-
-            long duration = System.currentTimeMillis() - t.getStartTime();
-            String time = formatTime(duration);
-
-            Bukkit.broadcast(MM.deserialize(" "));
-            Bukkit.broadcast(MM.deserialize("<gradient:#4A6FA5:#E8DCC8><bold>  " + t.getId().toUpperCase() + " has completed the speedrun!  </bold>"));
-            Bukkit.broadcast(MM.deserialize("<#E8DCC8>Final time: <white><bold>" + time + "</bold>"));
-            Bukkit.broadcast(MM.deserialize(" "));
-
-            for (UUID uuid : t.getPlayers()) {
-                Player p = Bukkit.getPlayer(uuid);
-                if (p != null && p.isOnline()) {
-                    p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
-                    p.setGameMode(GameMode.SPECTATOR);
-                }
-            }
-        }
+    public GameListener(SpeedrunRace plugin) {
+        this.plugin = plugin;
     }
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
-        Team t = teamManager.getByPlayer(e.getPlayer());
+        Team t = plugin.getTeamManager().getByPlayer(e.getPlayer());
         if (t == null) return;
 
         if (e.getPlayer().getGameMode() == GameMode.SPECTATOR) return;
@@ -75,8 +49,78 @@ public class GameListener implements Listener {
         }
     }
 
-    private String formatTime(long millis) {
-        long secs = millis / 1000;
-        return String.format("%02d:%02d:%02d", secs / 3600, (secs % 3600) / 60, secs % 60);
+    @EventHandler
+    public void onJoin(PlayerJoinEvent e) {
+        plugin.applyFinishedTeamGameMode(e.getPlayer());
+        new RaceScoreboardTask(plugin).updatePlayer(e.getPlayer());
+        plugin.refreshPlayerVisibility();
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent e) {
+        Bukkit.getScheduler().runTask(plugin, plugin::refreshPlayerVisibility);
+    }
+
+    @EventHandler
+    public void onWorldChange(PlayerChangedWorldEvent e) {
+        plugin.refreshPlayerVisibility();
+    }
+
+    @EventHandler
+    public void onGameModeChange(PlayerGameModeChangeEvent e) {
+        Bukkit.getScheduler().runTask(plugin, plugin::refreshPlayerVisibility);
+    }
+
+    @EventHandler
+    public void onChat(AsyncChatEvent e) {
+        if (!plugin.isRaceStarted()) return;
+
+        Player sender = e.getPlayer();
+        e.viewers().removeIf(audience -> audience instanceof Player viewer && !canReceiveChat(sender, viewer));
+    }
+
+    @EventHandler
+    public void onDeath(PlayerDeathEvent e) {
+        Component message = e.deathMessage();
+        if (message == null) return;
+
+        e.deathMessage(null);
+        sendTeamAnnouncement(e.getPlayer(), message);
+    }
+
+    @EventHandler
+    public void onAdvancement(PlayerAdvancementDoneEvent e) {
+        Component message = e.message();
+        if (message == null) return;
+
+        e.message(null);
+        sendTeamAnnouncement(e.getPlayer(), message);
+    }
+
+    private void sendTeamAnnouncement(Player player, Component message) {
+        Team team = plugin.getTeamManager().getByPlayer(player);
+        for (Player viewer : Bukkit.getOnlinePlayers()) {
+            if (canReceiveTeamAnnouncement(player, viewer, team)) {
+                viewer.sendMessage(message);
+            }
+        }
+    }
+
+    private boolean canReceiveTeamAnnouncement(Player player, Player viewer, Team team) {
+        if (viewer.equals(player)) return true;
+        if (plugin.isAdmin(player) || plugin.isAdmin(viewer)) return true;
+        return team != null && team.getPlayers().contains(viewer.getUniqueId());
+    }
+
+    private boolean canReceiveChat(Player sender, Player viewer) {
+        if (sender.equals(viewer)) return true;
+        if (plugin.isAdmin(sender) || plugin.isAdmin(viewer)) return true;
+
+        if (plugin.isInLobbyWorld(sender)) {
+            return plugin.isInLobbyWorld(viewer);
+        }
+
+        Team senderTeam = plugin.getTeamManager().getByPlayer(sender);
+        return senderTeam != null && senderTeam.getPlayers().contains(viewer.getUniqueId());
     }
 }

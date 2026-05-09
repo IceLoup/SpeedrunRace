@@ -1,22 +1,31 @@
 package xyz.pyxismc.speedrunrace.listeners;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import xyz.pyxismc.speedrunrace.SpeedrunRace;
 import xyz.pyxismc.speedrunrace.core.TeamManager;
 import xyz.pyxismc.speedrunrace.models.Team;
 
 public class PortalListener implements Listener {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+    private final SpeedrunRace plugin;
     private final TeamManager teamManager;
 
-    public PortalListener(TeamManager teamManager) {
-        this.teamManager = teamManager;
+    public PortalListener(SpeedrunRace plugin) {
+        this.plugin = plugin;
+        this.teamManager = plugin.getTeamManager();
     }
 
     @EventHandler
@@ -74,5 +83,42 @@ public class PortalListener implements Listener {
                 e.setTo(overworld.getSpawnLocation());
             }
         }
+    }
+
+    @EventHandler
+    public void onDragonDeath(EntityDeathEvent e) {
+        if (!plugin.isRaceStarted()) return;
+        if (e.getEntity().getType() != EntityType.ENDER_DRAGON) return;
+
+        World world = e.getEntity().getWorld();
+        if (world.getEnvironment() != World.Environment.THE_END) return;
+
+        Team team = teamManager.getByWorldName(world.getName());
+        if (team == null || team.isFinished()) return;
+        if (!world.getName().equals(team.getWorldName(World.Environment.THE_END))) return;
+
+        plugin.finishTeam(team);
+        announceTeamWin(team);
+    }
+
+    private void announceTeamWin(Team team) {
+        Component blank = MM.deserialize(" ");
+        Component title = MM.deserialize("<gradient:#6b109e:#c13cff><bold>  " + team.getId().toUpperCase() + " has slain the Ender Dragon!  </bold>");
+        Component time = MM.deserialize("<#6b109e>Final time: <white><bold>" + plugin.formatDuration(team.getFinishDurationMillis()) + "</bold>");
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (plugin.isTeamMember(team, player)) {
+                player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
+            }
+
+            if (plugin.isTeamMember(team, player) || plugin.isSpectator(player) || plugin.isAdmin(player)) {
+                player.sendMessage(blank);
+                player.sendMessage(title);
+                player.sendMessage(time);
+                player.sendMessage(blank);
+            }
+        }
+
+        plugin.refreshPlayerVisibility();
     }
 }
